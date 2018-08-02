@@ -79,6 +79,6 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: https://github.com/smduan/smduan.github.io.git
-  branch: 
+  repo: https://github_token@github.com/smduan/smduan.github.io.git
+  branch: master 
   message: 

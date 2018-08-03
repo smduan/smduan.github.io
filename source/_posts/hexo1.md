@@ -17,7 +17,7 @@ hexo： 一款基于Node.js的静态博客框架，hexo可以部署在自己的�
 
 笔者调研两款框架后直接选择hexo，不为什么。下面开始从零搭建网站。
 
-## 1 本地部署hexo
+## 本地部署hexo
 hexo安装需要Node.js和git。在此仅提供Node.js的安装命令。
 
 安装Node.js和hexo
@@ -44,7 +44,7 @@ $hexo server
 
 每次写完博客文章之后将其放到/hexo/blog/source/_posts/目录下，hexo会自动检测到该文章，无需重启服务。
 
-## 2 github部署
+## github部署
 上面的内容是将静态页面部署到本地服务器。但是我不想花钱买服务器。然而放在自己电脑上又不方便。不用担心，hexo支持将静态网页部署到github上。
 
 首先在github上新建一个空的仓库，命名为:yourname.github.io。因为github提供一个二级域名，也就是上面这个域名供你访问。

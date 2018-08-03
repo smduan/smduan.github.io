@@ -1,5 +1,5 @@
 ---
-title: Hexo+github搭建个人博客（一）
+title: Hexo+github搭建个人博客（一）: hexo博客部署
 
 categories: 
 - hexo搭建个人博客
@@ -80,7 +80,7 @@ $hexo deploy      #hexo d
 
 至此，已经将博客部署到github上，在浏览器输入:https://yourname.github.io，即可看到博客。
 
-## 最后
+## 总结
 
 至此，每次写完博客，将其复制到/hexo/blog/source/_posts/目录下，然后执行下列命令部署到github上：
 
@@ -90,5 +90,7 @@ $hexo clean
 $hexo g
 $hexo d
 ```
-
 然后登录https://yourname.github.io进行查看自己的新博客。
+
+## 参考文献
+[基于 Hexo 的全自动博客构建部署系统](http://kchen.cc/2016/11/12/hexo-instructions/)

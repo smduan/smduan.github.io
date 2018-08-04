@@ -1,5 +1,5 @@
 ---
-title: Hexo+github搭建个人博客（一）: hexo博客部署
+title: Hexo+Github搭建个人博客（一）：博客部署
 
 categories: 
 - hexo搭建个人博客

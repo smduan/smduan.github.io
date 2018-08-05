@@ -57,7 +57,7 @@ Travis CI监控到这个分支有push操作，就会重新部署博客。
 
 设置访问权限。根据实际情况设置。
 
-![](/images/set-permission.png)
+![](/images/set-permision.png)
 
 生成token
 

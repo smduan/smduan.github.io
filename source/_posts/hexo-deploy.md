@@ -5,7 +5,8 @@ categories:
 - hexo搭建个人博客
 
 tags:
-- hexo博客部署
+- hexo
+- github
 
 ---
 ## 框架选择

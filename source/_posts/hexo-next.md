@@ -5,11 +5,12 @@ categories:
 - hexo搭建个人博客
 
 tags:
-- hexo博客个性化设计
+- hexo
+- next
 
 ---
 ## 主题选择
-hexo默认的主题是landscape，这个主题用一个字总结就是----丑。
+hexo默认的主题是landscape，这个主题用一个字总结就是--丑。
 
 hexo官网提供很多简洁、精美的[主题](https://hexo.io/themes/)供选择，笔者选择[next主题](https://github.com/iissnan/hexo-theme-next)。这款主题制作精美而且用户较多，遇到问题基本上能够搜到解答。
 <!-- more -->
@@ -61,7 +62,7 @@ $ hexo new page "categories"
 ```
 上面三条命令创建关于页面、分类页面和标签页面，这三个页面默认是关闭的，根据自己的需要创建。
 
-将主题语言设置为中文，默认为因为
+将主题语言设置为中文，默认为英文
 ``` 
 $ cd /hexo/blog/themes/next/language/
 $ cp zh-Hans.yml default.yml
@@ -105,7 +106,7 @@ busuanzi_count:
 ![](/images/count-bottom.png)
 
 ## 添加评论功能
-笔者使用韩国的来必力(liv)评论系统，因为其配置和使用相对简单。[官网地址](https://livere.com/)。首先根据其提示注册然后登录。
+笔者使用韩国的来必力(livere)评论系统，因为其配置和使用相对简单。[官网地址](https://livere.com/)。首先根据其提示注册然后登录。
 
 ![](/images/livere-install.png)
 

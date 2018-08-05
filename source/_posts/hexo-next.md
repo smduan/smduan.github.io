@@ -1,6 +1,6 @@
 ---
 title: Hexo+github搭建个人博客（二）：博客个性化设计
-
+date: 2018-08-03
 categories: 
 - hexo搭建个人博客
 

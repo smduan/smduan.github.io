@@ -1,5 +1,6 @@
 ---
 title: Hello World
+date: 2018-08-01
 categories: 
 - 测试页面
 tags:

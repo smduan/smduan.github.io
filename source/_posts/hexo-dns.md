@@ -1,5 +1,5 @@
 ---
-title: Hexo+github搭建个人博客（三）：博客域名解析
+title: Hexo+github搭建个人博客（四）：博客域名解析
 date: 2018-08-07
 categories: 
 - hexo搭建个人博客

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/05/hexo-travis/</loc>
+    <lastmod>2018-08-07T11:04:29.333Z</lastmod>
+    <data>
+        <display>
+        <title>Hexo+github搭建个人博客（三）：Travis CI持续集成,自动部署博客</title>
+        <pubTime>2018-08-04T16:00:00.000Z</pubTime>
+        
+        <tag>hexo</tag>
+         
+        <tag>Travis CI</tag>
+         
+         
+           
+             
+              <breadCrumb title="hexo搭建个人博客" url="http://duansm.top/categories/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/07/hexo-dns/</loc>
+    <lastmod>2018-08-07T11:03:06.686Z</lastmod>
+    <data>
+        <display>
+        <title>Hexo+github搭建个人博客（四）：博客域名解析</title>
+        <pubTime>2018-08-06T16:00:00.000Z</pubTime>
+        
+        <tag>hexo</tag>
+         
+        <tag>DNS</tag>
+         
+         
+           
+             
+              <breadCrumb title="hexo搭建个人博客" url="http://duansm.top/categories/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/05/mac-rewritting-rm/</loc>
+    <lastmod>2018-08-07T08:51:57.386Z</lastmod>
+    <data>
+        <display>
+        <title>mac改写rm命令：移到废纸篓</title>
+        <pubTime>2018-08-04T16:00:00.000Z</pubTime>
+        
+        <tag>mac</tag>
+         
+        <tag>trash</tag>
+         
+         
+           
+             
+              <breadCrumb title="mac小技巧" url="http://duansm.top/categories/mac%E5%B0%8F%E6%8A%80%E5%B7%A7/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/01/hello-world/</loc>
+    <lastmod>2018-08-05T14:06:01.927Z</lastmod>
+    <data>
+        <display>
+        <title>Hello World</title>
+        <pubTime>2018-07-31T16:00:00.000Z</pubTime>
+        
+        <tag>hello world</tag>
+         
+         
+           
+             
+              <breadCrumb title="测试页面" url="http://duansm.top/categories/%E6%B5%8B%E8%AF%95%E9%A1%B5%E9%9D%A2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/02/hexo-deploy/</loc>
+    <lastmod>2018-08-05T14:06:01.927Z</lastmod>
+    <data>
+        <display>
+        <title>Hexo+Github搭建个人博客（一）：博客部署</title>
+        <pubTime>2018-08-01T16:00:00.000Z</pubTime>
+        
+        <tag>hexo</tag>
+         
+        <tag>github</tag>
+         
+         
+           
+             
+              <breadCrumb title="hexo搭建个人博客" url="http://duansm.top/categories/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>http://duansm.top/2018/08/03/hexo-next/</loc>
+    <lastmod>2018-08-05T14:06:01.927Z</lastmod>
+    <data>
+        <display>
+        <title>Hexo+github搭建个人博客（二）：博客个性化设计</title>
+        <pubTime>2018-08-02T16:00:00.000Z</pubTime>
+        
+        <tag>hexo</tag>
+         
+        <tag>next</tag>
+         
+         
+           
+             
+              <breadCrumb title="hexo搭建个人博客" url="http://duansm.top/categories/hexo%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+    
+    
+</urlset>

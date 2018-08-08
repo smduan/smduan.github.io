@@ -1,6 +1,6 @@
 ---
 title: Hexo+github搭建个人博客（五）：百度和谷歌收录博客
-date: 2018-08-07
+date: 2018-08-08
 categories: 
 - hexo搭建个人博客
 
@@ -96,6 +96,11 @@ google同样有多种方法。笔者选择CNAME方式验证。
 ![](/images/hexo-sitemap/add-google-sitemap.png)
 
 谷歌收录的设置到此结束。
+### 验证google收录是否成功
+在google浏览器中输入：site:duansm.top，查看是否能够搜到博客。
 
+![](/images/hexo-sitemap/google-site.png)
+
+从图中可以看出，google已经能够搜索到博客，即google收录成功。
 ## 参考文献
 [博客提交百度和谷歌收录](https://www.jianshu.com/p/201d064e9f50)

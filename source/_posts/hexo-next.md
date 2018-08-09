@@ -70,7 +70,7 @@ $ cp zh-Hans.yml default.yml
 
 重新部署博客，在浏览器中看到博客如下图所示。
 
-![](/images/next-page-1.png)
+![](/images/hexo-next/next-page-1.png)
 
 与前面的主题相比是不是发现b格提升了许多。上面安装的主题功能比脸都干净，许多功能需要自己配置。
 
@@ -99,20 +99,20 @@ busuanzi_count:
 ```
 保存文件，重新部署博客，可以看到文章顶部显示阅读数
 
-![](/images/count-top.png)
+![](/images/hexo-next/count-top.png)
 
 网页底部显示访问人数和访问量
 
-![](/images/count-bottom.png)
+![](/images/hexo-next/count-bottom.png)
 
 ## 添加评论功能
 笔者使用韩国的来必力(livere)评论系统，因为其配置和使用相对简单。[官网地址](https://livere.com/)。首先根据其提示注册然后登录。
 
-![](/images/livere-install.png)
+![](/images/hexo-next/livere-install.png)
 
 登录之后，点击安装—>现在安装。根据提示填写信息之后生成id号。
 
-![](/images/livere-id.png)
+![](/images/hexo-next/livere-id.png)
 
 复制上图中的data-uid
 
@@ -125,7 +125,7 @@ livere_uid: data-uid         #data-uid就是上面生成的id号。
 
 重新部署博客，可以看到评论框
 
-![](/images/livere-talk.png)
+![](/images/hexo-next/livere-talk.png)
 ## 添加搜索功能
 当博客文章较多时，需要使用到搜索功能，搜索关键字找到目标文章。
 
@@ -151,7 +151,7 @@ local_search:
 ```
 重新部署博客，可以使用搜索功能
 
-![](/images/search.png)
+![](/images/hexo-next/search.png)
 
 至此一些常用的功能已经配置完成。
 

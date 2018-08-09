@@ -37,11 +37,11 @@ $hexo init blog       #blog即为博客源码安装目录，名字随便起
 $cd blog
 $hexo server
 ```
-![](/images/hexo_server.png)
+![](/images/hexo-deploy/hexo_server.png)
 
 出现如上内容，代表博客构建成功，在浏览器中输入地址:http://localhost:4000，就可以看到博客页面。
 
-![](/images/hexo_index.png)
+![](/images/hexo-deploy/hexo_index.png)
 
 每次写完博客文章之后将其放到/hexo/blog/source/_posts/目录下，hexo会自动检测到该文章，无需重启服务。
 

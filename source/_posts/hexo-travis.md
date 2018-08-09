@@ -56,11 +56,11 @@ Travis CI监控到这个分支有push操作，就会重新部署博客。
 
 设置访问权限。根据实际情况设置。
 
-![](/images/set-permision.png)
+![](/images/hexo-travis/set-permision.png)
 
 生成token
 
-![](/images/Personal_access_token.png)
+![](/images/hexo-travis/Personal_access_token.png)
 
 记住上面的token，因为只生成一次，页面关闭就没了。
 
@@ -68,11 +68,11 @@ Travis CI监控到这个分支有push操作，就会重新部署博客。
 ### 配置Travis官网
 因为travis是在线服务，需要在其官网进行相关配置。使用github账号登录[Travis CI官网](https://travis-ci.com/)。可以发现当前github账户中的仓库，选择要部署的仓库，然后点击setting。
 
-![](/images/select-repo.png)
+![](/images/hexo-travis/select-repo.png)
 
 填入github生成的personal access token，并选择该仓库需要travis监控的分支。
 
-![](/images/set-travis.png)
+![](/images/hexo-travis/set-travis.png)
 
 上面的github_token字段对应的value就是github网站上生成的personal access token。该字段的name可以随便起，但是必须与下面的travis配置文件中的对应。选择要编译的源码在blog-source分支。
 ### 配置.travis.yml
@@ -123,7 +123,7 @@ after_script:
 
 然后观察travis网页，可以发现正在编译，下图是编译成功的截图
 
-![](/images/run-travis.png)
+![](/images/hexo-travis/run-travis.png)
 
 可以点击job log查看编译部署的日志。以后只要往blog-source分支push内容都会触发travis编译。
 

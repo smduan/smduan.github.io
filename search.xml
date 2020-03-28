@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Selective Search算法</title>
+    <url>/2018/08/09/selective-search/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><a href="http://www.huppelen.nl/publications/selectiveSearchDraft.pdf" target="_blank" rel="noopener">Selective Search for Object Recognition</a>立足点是为目标识别(Object Recognition)产生可能的目标区域。<br><a id="more"></a><br>目标识别是指在图像中找到确定一个物体，并找出其具体位置。之前的做法主要是基于穷举搜索（Exhaustive Search），选择一个窗口扫描整张图像，改变窗口的大小，继续扫描整张图像。显然这种方法会比较耗时。</p>
+<p>作者利用图像分割的方法得到一些原始区域，然后使用一些合并策略将这些区域合并，得到可能包含目标的区域。<br><img src="/images/selective-search/object.png" alt=""><br>上图给出了四个例子，来说明目标识别的复杂性以及难度。（a）中的场景是一张桌子，桌子上面放了碗，瓶子，还有其他餐具等等。比如要识别“桌子”，我们可能只是指桌子本身，也可能包含其上面的其他物体。这里显示出了图像中不同物体之间是有一定的层次关系的。（b）中给出了两只猫，可以通过纹理（texture）来找到这两只猫，却又需要通过颜色（color）来区分它们。（c）中变色龙和周边颜色接近，可以通过纹理来区分。（d）中的车辆，我们很容易把车身和车轮看做一个整体，但它们两者之间在纹理和颜色方面差别都非常地大。</p>
+<p>因此，不能通过单一的策略来区分不同的物体，需要充分考虑图像物体的多样性（diversity）。另外，在图像中物体的布局有一定的层次（hierarchical）关系，考虑这种关系才能够更好地对物体的类别（category）进行区分。</p>
+<h2 id="Selective-Search"><a href="#Selective-Search" class="headerlink" title="Selective Search"></a>Selective Search</h2><p>首先介绍区域合并的算法。使用<a href="http://people.cs.uchicago.edu/~pff/papers/seg-ijcv.pdf" target="_blank" rel="noopener">Efficient Graph-Based Image Segmentation</a>产生原始区域。然后使用下面算法对这些原始区域进行合并。<br><img src="/images/selective-search/grouping-algorithm.png" alt=""><br>输入：彩色图片<br>输出：目标位置的可能结果集合L</p>
+<p>1、使用Efficient Graph-Based Image Segmentation中的图像分割算法生成初始区域$R={r_{1},…,r_{n}}$<br>2、初始化相似度集合$S=\varnothing$<br>3、计算两两相邻区域之间的相似度，将其添加到相似度集合S中<br>4、从相似度集合S中找出相似度最大的两个区域$r_{i}$和$r_{j}$，将其合并成为一个区域$r_{t}$，从相似度集合中除去原先与$r_{i}$和$r_{j}$相邻区域之间计算的相似度，计算$r_{t}$与其相邻区域（原先与$r_{i}$或$r_{j}$相邻的区域）的相似度，将其结果添加的到相似度集合S中。同时将新区域$r_{t}$添加到区域集合R中。<br>5、获取每个区域的Location，这个结果就是物体位置的可能结果L</p>
+<h2 id="策略多样化-Diversification-Strategies"><a href="#策略多样化-Diversification-Strategies" class="headerlink" title="策略多样化(Diversification Strategies)"></a>策略多样化(Diversification Strategies)</h2><h3 id="颜色空间多样化"><a href="#颜色空间多样化" class="headerlink" title="颜色空间多样化"></a>颜色空间多样化</h3><p>作者采用了8中不同的颜色方式，主要是为了考虑场景以及光照条件等。这个策略主要应用于Efficient Graph-Based Image Segmentation图像分割算法中原始区域的生成。主要使用的颜色空间有：（1）RGB，（2）灰度I，（3）Lab，（4）rgI（归一化的rg通道加上灰度），（5）HSV，（6）rgb（归一化的RGB），（7）C（具体请看<a href="http://www.eecs.harvard.edu/~zickler/wiki/ColorSubspaces/ColorInvariance_Geusebroek_PAMI_2001.pdf" target="_blank" rel="noopener">Color Invariance</a>），（8）H（HSV的H通道）</p>
+<h3 id="相似度计算多样性"><a href="#相似度计算多样性" class="headerlink" title="相似度计算多样性"></a>相似度计算多样性</h3><p>区域合并时是根据两个区域的相似度进行合并，论文综合了四种相似度计算方法，分别是：颜色、纹理、大小(size)、吻合(fit)。</p>
+<h4 id="颜色相似度"><a href="#颜色相似度" class="headerlink" title="颜色相似度"></a>颜色相似度</h4><p>获取图像每个颜色通道的25 bins的直方图，这样每个区域$r_{i}$可以得到一个75维的颜色直方图$C_{i}={c^{1}<em>{i},…,c^{n}</em>{i}}$。颜色直方图使用L1-norm归一化。区域之间颜色相似度通过下面的公式计算:   </p>
+<p>$$s_{colour}(r_{i},r_{j})=\sum_{i=1}^{n}min(c^{k}<em>{i},c^{k}</em>{j})$$<br>在区域合并过程中需要对合并后的区域进行计算其直方图，计算方法:<br>  $$C_{t} = \frac{size(r_{i})\times C_{i}+size(r_{j})\times C_{j}}{size(r_{i})+size(r_{j})}$$  </p>
+<h4 id="纹理相似度"><a href="#纹理相似度" class="headerlink" title="纹理相似度"></a>纹理相似度</h4><p>这里的纹理采用SIFT-Like特征。具体做法是对每个颜色通道的8个不同方向计算方差σ=1的高斯微分（Gaussian Derivative），每个通道每个颜色获取10 bins的直方图（同样采用L1-norm归一化），这样就可以获取到一个240维的向量$T_{i}={t^{1}<em>{i},…,t^{n}</em>{i}}$。区域之间纹理相似度计算方式和颜色相似度计算方式类似。<br>$$s_{texture}(r_{i},r_{j})=\sum_{i=1}^{n}ming(t^{k}<em>{i},t^{n}</em>{j})$$<br>合并之后新区域的纹理特征计算方式和合并后颜色特征计算相同。</p>
+<h4 id="大小相似度"><a href="#大小相似度" class="headerlink" title="大小相似度"></a>大小相似度</h4><p>这里的大小是指区域中包含像素点的个数。使用大小的相似度计算，主要是为了尽量让小的区域优先合并：  </p>
+<center>$$s_{size}(r_{i},r_{j}) =1-\frac{size(r_{i})+size(r_{j})}{size(im)}$$</center><br>其中size(im)表示整张图的像素大小<br>#### 吻合相似度<br>这里主要是为了衡量两个区域是否更加“吻合”，其指标是合并后的区域的外接矩形越小，其吻合度越高。其计算方式：<br><center>$$s_{fill}(r_{i},r_{j})=1-\frac{size(BB_{ij})-size(r_{i}-size(r_{j}))}{size(im)}$$</center>  
+
+<p>$BB_{ij}$表示$r_{i}和r_{j}$的外接矩形区域。size(im)表示整张图片的像素大小  </p>
+<h4 id="整体相似度"><a href="#整体相似度" class="headerlink" title="整体相似度"></a>整体相似度</h4><p>最终的相似度评估方式是将上述四种相似度计算方式综合。  </p>
+<center>$$s(r_{i},r_{j}) =a_{1}s_{colour}(r_{i},r_{j})+a_{2}s_{texture}(r_{i},r_{j})+a_{3}s_{size}(r_{i},r_{j})+a_{4}s_{fill}(r_{i},r_{j})$$</center> 
+
+<h2 id="Selective-Search用于目标识别"><a href="#Selective-Search用于目标识别" class="headerlink" title="Selective Search用于目标识别"></a>Selective Search用于目标识别</h2><p>通过前面的区域合并，可以得到一些目标的位置假设集合L。接下来的任务就是如何从中找出目标的真正位置并确定目标的类别。使用的方式是传统的”特征+SVM”方法。<br>1、先使用HOG或者词袋模型(BoW,Bag-of-Words)<br>2、训练SVM用于识别目标。<br>训练过程中，首先选择ground-truth窗口作为正样本，选择与正样本窗口重叠20%~50%的窗口作为负样本。<br>迭代训练：一次训练结束后，选择分类时的false positive放入了负样本中，再次训练。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Selective Search方式只是得到目标候选区域，并没有对这些目标候选区域的位置进行调整。后续的R-CNN和Fast R-CNN使用Selective Search方式生成目标候选区域，然后使用深度学习的方式对这些候选区域进行识别和位置回归得到更加精确的结果。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://blog.csdn.net/csyhhb/article/details/50425114" target="_blank" rel="noopener">论文笔记 《Selective Search for Object Recognition》</a>   </p>
+<p><a href="https://blog.csdn.net/surgewong/article/details/39316931" target="_blank" rel="noopener">Selective Search for Object Recognition</a></p>
+]]></content>
+      <categories>
+        <category>目标检测(Object Detection)</category>
+      </categories>
+      <tags>
+        <tag>Selective Search</tag>
+        <tag>Object Detection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo+github搭建个人博客（五）：百度和谷歌收录博客</title>
+    <url>/2018/08/08/hexo-sitemap/</url>
+    <content><![CDATA[<h2 id="Why"><a href="#Why" class="headerlink" title="Why"></a>Why</h2><p>个人博客搭好之后，我们的博客并没有被百度和谷歌收录，也就是说只能自己看，别人搜不到。<br><a id="more"></a><br>在百度或者谷歌的浏览器中输入：site:duansm.top</p>
+<p><img src="/images/hexo-sitemap/site.png" alt=""></p>
+<p>可以发现谷歌搜索不到我们的博客</p>
+<h2 id="百度收录"><a href="#百度收录" class="headerlink" title="百度收录"></a>百度收录</h2><h3 id="提交网址"><a href="#提交网址" class="headerlink" title="提交网址"></a>提交网址</h3><p>登录<a href="https://ziyuan.baidu.com/" target="_blank" rel="noopener">百度搜索资源平台</a>。</p>
+<p><img src="/images/hexo-sitemap/tijiao.png" alt=""></p>
+<p>选择网站支持-&gt;链接提交，按照提示提交自己的网址。</p>
+<h3 id="验证网站所有权"><a href="#验证网站所有权" class="headerlink" title="验证网站所有权"></a>验证网站所有权</h3><p>验证网站所有权的方式有三种：文件验证、html标签验证和cname解析验证。笔者使用cname解析验证。这种方法比较简单，将百度生成的主机路径和主机值添加到阿里云域名对应的cname解析中即可。</p>
+<p><img src="/images/hexo-sitemap/baidu-cname.png" alt=""></p>
+<p>然后点击验证即可。</p>
+<h3 id="产生sitemap"><a href="#产生sitemap" class="headerlink" title="产生sitemap"></a>产生sitemap</h3><p>我们需要使用npm自动生成网站的sitemap，然后将生成的sitemap提交到百度和其他搜索引擎。sitemap是一种文件，您可以通过该文件列出您网站上的网页，从而将您网站内容的组织架构告知Google和其他搜索引擎。Googlebot等搜索引擎网页抓取工具会读取此文件，以便更加智能地抓取您的网站。</p>
+<p>首先安装插件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ npm install hexo-generator-sitemap --save</span><br><span class="line">$ npm install hexo-generator-baidu-sitemap –-save</span><br></pre></td></tr></table></figure>
+<p>编辑博客配置文件:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim _config.yml</span><br><span class="line"><span class="comment"># 自动生成sitemap</span></span><br><span class="line">sitemap:</span><br><span class="line">  path: sitemap.xml</span><br><span class="line">baidusitemap:</span><br><span class="line">  path: baidusitemap.xml</span><br></pre></td></tr></table></figure>
+<p>保存文件，重新部署博客，查看：duansm.top/sitemap.xml。显示如下信息表示sitemap生成成功。</p>
+<p><img src="/images/hexo-sitemap/sitemap-xml.png" alt=""></p>
+<h3 id="提交sitemap"><a href="#提交sitemap" class="headerlink" title="提交sitemap"></a>提交sitemap</h3><p>在百度资源搜索平台，找到链接提交，这里我们可以看到有两种提交方式，自动提交和手动提交，自动提交又分为主动推送、自动推送和sitemap。</p>
+<p>自动推送配置最简单，因此笔者选择自动推送。</p>
+<p>在主题next的配置文件中进行如下修改</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim _config.yml</span><br><span class="line">baidu_push: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>然后就会将./themes/next/layout/_third-party/seo/baidu-push.swig中的代码自动推送给百度。这样每次访问博客中的页面就会自动向百度提交sitemap。</p>
+<p>百度收录网站到此配置结束。只需要等待百度收录，这个过程会比较久。</p>
+<h2 id="google收录"><a href="#google收录" class="headerlink" title="google收录"></a>google收录</h2><h3 id="google-search-console添加博客网址"><a href="#google-search-console添加博客网址" class="headerlink" title="google search console添加博客网址"></a>google search console添加博客网址</h3><p>登录<a href="https://www.google.com/webmasters/" target="_blank" rel="noopener">google search console</a></p>
+<p><img src="/images/hexo-sitemap/search-console.png" alt=""></p>
+<p>添加自己的博客网站</p>
+<h3 id="验证网站所有权-1"><a href="#验证网站所有权-1" class="headerlink" title="验证网站所有权"></a>验证网站所有权</h3><p>google同样有多种方法。笔者选择CNAME方式验证。</p>
+<p><img src="/images/hexo-sitemap/google-cname.png" alt=""></p>
+<p>将上图中生成的CNAME标签和CNAME目的地内容添加到阿里云解析设置中。</p>
+<p><img src="/images/hexo-sitemap/add-set.png" alt=""></p>
+<p>然后在google search console中验证。</p>
+<p><img src="/images/hexo-sitemap/yanzheng.png" alt=""></p>
+<h3 id="提交sitemap-1"><a href="#提交sitemap-1" class="headerlink" title="提交sitemap"></a>提交sitemap</h3><p>在google search console中选择站点地图-&gt;添加/测试站点地图</p>
+<p><img src="/images/hexo-sitemap/add-google-sitemap.png" alt=""></p>
+<p>谷歌收录的设置到此结束。</p>
+<h3 id="验证google收录是否成功"><a href="#验证google收录是否成功" class="headerlink" title="验证google收录是否成功"></a>验证google收录是否成功</h3><p>在google浏览器中输入：site:duansm.top，查看是否能够搜到博客。</p>
+<p><img src="/images/hexo-sitemap/google-site.png" alt=""></p>
+<p>从图中可以看出，google已经能够搜索到博客，即google收录成功。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://www.jianshu.com/p/201d064e9f50" target="_blank" rel="noopener">博客提交百度和谷歌收录</a></p>
+]]></content>
+      <categories>
+        <category>hexo搭建个人博客</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>sitemap</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Mac上安装Sublime Text3和LaTex环境</title>
+    <url>/2018/08/08/mac-sublime-latex/</url>
+    <content><![CDATA[<h2 id="安装Sublime-Text3和Package-Control"><a href="#安装Sublime-Text3和Package-Control" class="headerlink" title="安装Sublime Text3和Package Control"></a>安装Sublime Text3和Package Control</h2><p>去<a href="http://www.sublimetext.com/" target="_blank" rel="noopener">sublime官网</a>下载sublime，然后点击安装。<br><a id="more"></a><br>前往<a href="https://packagecontrol.io/installation" target="_blank" rel="noopener">Package control官网</a>，复制下图中的代码。<br><img src="/images/sublime-latex/package-control.png" alt=""></p>
+<p>打开Sublime，选择View-&gt;show Console，打开控制面板。将上图中的代码复制到打开的控制面板中，点击回车，等待安装结束，然后重新启动Sublime Text。</p>
+<h2 id="安装MacTex"><a href="#安装MacTex" class="headerlink" title="安装MacTex"></a>安装MacTex</h2><p>首先去<a href="http://www.tug.org/mactex/mactex-download.html" target="_blank" rel="noopener">MacTex官网</a>下载MacTex.kpg。文件3G多。</p>
+<p>点击安装。</p>
+<h2 id="安装LatexTools"><a href="#安装LatexTools" class="headerlink" title="安装LatexTools"></a>安装LatexTools</h2><p>打开sublime Text。选择Sublime Text-&gt;Preferences-&gt;Package Control或者按下“Command+Shift+P”打开命令托盘Command pallet。</p>
+<p>在命令托盘里输入“Install Package”，按下Enter回车建。</p>
+<p>完成之后，输入“LaTeX Tools”，找到这一项并回车安装。</p>
+<p>安装结束后重启Sublime Text</p>
+<h2 id="安装skim"><a href="#安装skim" class="headerlink" title="安装skim"></a>安装skim</h2><p>前往<a href="https://skim-app.sourceforge.io/" target="_blank" rel="noopener">skim官网</a>下载skim并安装。</p>
+<p>打开skim。在菜单栏中Skim &gt; Preference(选项) &gt; Sync(同步)</p>
+<p>在预设菜单中选择Sublime Text。</p>
+<p><img src="/images/sublime-latex/sublime-skim.png" alt=""></p>
+<p>关闭上面窗口。至此环境安装完毕</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>打开Sublime Text3，Command+N新建文件并在里面输入如下代码。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">%!TEX program = xelatex </span><br><span class="line">\documentclass&#123;article&#125; </span><br><span class="line">\usepackage&#123;fontspec, xunicode, xltxtra&#125; </span><br><span class="line">\setmainfont&#123;Hiragino Sans GB&#125; </span><br><span class="line">\title&#123;Title&#125; \author&#123;name&#125; </span><br><span class="line">\begin&#123;document&#125; </span><br><span class="line">\maketitle&#123;title&#125; </span><br><span class="line">\section&#123;Introduction&#125; This is where you will write your content. 在这里写上内容。 \end&#123;document&#125;</span><br></pre></td></tr></table></figure>
+<p>Command+S保存文件，并命名为name.tex，Command+B编译并运行，这时就可以在Skim里面看到PDF预览了。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://blog.csdn.net/qq_25491201/article/details/78138472" target="_blank" rel="noopener">Mac下配置sublime实现LaTeX</a></p>
+]]></content>
+      <categories>
+        <category>Sublime Text3</category>
+      </categories>
+      <tags>
+        <tag>Sublime</tag>
+        <tag>LaTex</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo+github搭建个人博客（四）：博客域名解析</title>
+    <url>/2018/08/07/hexo-dns/</url>
+    <content><![CDATA[<h2 id="Why"><a href="#Why" class="headerlink" title="Why"></a>Why</h2><a href="/2018/08/02/hexo-deploy/" title="Hexo+Github搭建个人博客（一）：博客部署">Hexo+Github搭建个人博客（一）：博客部署</a>中所讲的访问博客<br>地址是：<a href="https://yourname.github.io" target="_blank" rel="noopener">https://yourname.github.io</a><br><a id="more"></a>
+<p>使用github提供的二级域名看起来很别扭。希望博客有自己的域名，这样看起来也更加正式。</p>
+<h2 id="域名购买与解析"><a href="#域名购买与解析" class="headerlink" title="域名购买与解析"></a>域名购买与解析</h2><p>笔者在阿里云上购买一个.top域名，域名为:duansm.top。购买流程按照阿里云的提示完成购买即可。</p>
+<p>购买域名之后，进入阿里云官网的控制台，在域名列表中可查看自己购买的域名：</p>
+<p><img src="/images/hexo-dns/aliyun-controller.png" alt=""></p>
+<p>点击解析，然后添加记录</p>
+<p><img src="/images/hexo-dns/add-record.png" alt=""></p>
+<p>填写信息</p>
+<p><img src="/images/hexo-dns/add-message.png" alt=""></p>
+<p>如图一次输入：CNAME、@、Github博客域名。选择保存完成个人域名向个人博客的映射。点击确定。</p>
+<p><img src="/images/hexo-dns/dns-list.png" alt=""></p>
+<h3 id="设置CNAME文件"><a href="#设置CNAME文件" class="headerlink" title="设置CNAME文件"></a>设置CNAME文件</h3><p>在博客源码的source目录下，生成CNAME文件，并填入域名。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim CNAME</span><br><span class="line"> duansm.top</span><br></pre></td></tr></table></figure>
+<p>保存，然后push到blog-source分支。travis ci重新部署之后。进入部署博客的github仓库，点击setting。</p>
+<p><img src="/images/hexo-dns/github-setting.png" alt=""></p>
+<p>查看custom domain变成了阿里云购买的域名。</p>
+<p><img src="/images/hexo-dns/custom-domain.png" alt=""></p>
+<p>至此可以是用新的域名访问博客。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://www.jianshu.com/p/cea41e5c9b2a" target="_blank" rel="noopener">个性化博客——域名绑定</a></p>
+<p><a href="https://www.zhihu.com/question/31377141" target="_blank" rel="noopener">github怎么绑定自己的域名？</a></p>
+]]></content>
+      <categories>
+        <category>hexo搭建个人博客</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>DNS</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo+github搭建个人博客（三）：Travis CI持续集成,自动部署博客</title>
+    <url>/2018/08/05/hexo-travis/</url>
+    <content><![CDATA[<h2 id="Why"><a href="#Why" class="headerlink" title="Why"></a>Why</h2><a href="/2018/08/02/hexo-deploy/" title="Hexo+Github搭建个人博客（一）：博客部署">Hexo+Github搭建个人博客（一）：博客部署</a>所讲的博客部署方式是：<br><br>首先，本地写好文章。<br><br>然后，使用hexo g d命令部署到github上去。<br><a id="more"></a>
+<p>但是，这种方式有个缺点是，我要在写文章的机器上安装hexo和Node.js环境。如果我们出差或者换电脑了，想要写博客，就需要重新安装博客环境。这就有点繁琐了。</p>
+<p>是否存在一种方式，在自己电脑上只写博客，然后github上的博客源码会自动编译部署？这样我们机器上就不需要安装hexo和Node.js环境，可以随时随地更新博客。</p>
+<p>这种方式是存在的。使用<a href="https://travis-ci.com/" target="_blank" rel="noopener">Travis CI持续集成</a>。Travis CI 是目前新兴的开源持续集成构建项目，它与jenkins，GO的很明显的区别在于采用yaml格式，同时他是在线服务，不像jenkins需要本地搭建服务器。目前大多数的github项目都已经移入到Travis CI的构建队列中。</p>
+<p>主要做法是：首先将博客源码托管到github，最好是托管到部署博客的仓库的一个分支上，让Travis检测该分支的push变动，只要有push操作，即对博客进行重新部署。这样的话，我们在本地写完博客，将博客push到github上，Travis CI会自动构建环境并进行博客部署。</p>
+<h2 id="github配置"><a href="#github配置" class="headerlink" title="github配置"></a>github配置</h2><h3 id="托管主题"><a href="#托管主题" class="headerlink" title="托管主题"></a>托管主题</h3><p>在github上新建一个空的仓库，命名为next用来托管<a href="/2018/08/03/hexo-next/" title="Hexo+github搭建个人博客（二）：博客个性化设计">Hexo+github搭建个人博客（二）：博客个性化设计</a>中配置好的主题。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/yourname/next</span><br><span class="line">$ cp -r /hexo/blog/themes/next/* ./next/</span><br><span class="line">$ git add .</span><br><span class="line">$ git commit -m <span class="string">'add themes'</span></span><br><span class="line">$ git push origin master</span><br></pre></td></tr></table></figure>
+<p>这样就将配置好的主题托管到github了，travis在构建环境的时候下载配置好的主题即可。</p>
+<h3 id="托管博客源码"><a href="#托管博客源码" class="headerlink" title="托管博客源码"></a>托管博客源码</h3><p>在github部署博客网页的仓库中新建一个blog-source的空分支，将博客源码托管到这个分支即可。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> -b blog-source https://github.com/yourname/yourname.github.io</span><br><span class="line">$ cp -r /hexo/blog/* ./yourname.github.io/</span><br><span class="line">$ git add .</span><br><span class="line">$ git commit -m <span class="string">'add blog source'</span></span><br><span class="line">$ git push origin blog-source</span><br></pre></td></tr></table></figure>
+<p>Travis CI监控到这个分支有push操作，就会重新部署博客。</p>
+<h3 id="产生personal-access-token"><a href="#产生personal-access-token" class="headerlink" title="产生personal access token"></a>产生personal access token</h3><p>使用travis自动部署博客，就需要travis对github仓库进行自动读写。github提供了token机制来供外部访问你的仓库。</p>
+<p>登录github账号，选择setting—&gt;Developer setting-&gt;Personal access token-&gt;Generate new token。</p>
+<p>设置访问权限。根据实际情况设置。</p>
+<p><img src="/images/hexo-travis/set-permision.png" alt=""></p>
+<p>生成token</p>
+<p><img src="/images/hexo-travis/Personal_access_token.png" alt=""></p>
+<p>记住上面的token，因为只生成一次，页面关闭就没了。</p>
+<h2 id="配置Travis-CI"><a href="#配置Travis-CI" class="headerlink" title="配置Travis CI"></a>配置Travis CI</h2><h3 id="配置Travis官网"><a href="#配置Travis官网" class="headerlink" title="配置Travis官网"></a>配置Travis官网</h3><p>因为travis是在线服务，需要在其官网进行相关配置。使用github账号登录<a href="https://travis-ci.com/" target="_blank" rel="noopener">Travis CI官网</a>。可以发现当前github账户中的仓库，选择要部署的仓库，然后点击setting。</p>
+<p><img src="/images/hexo-travis/select-repo.png" alt=""></p>
+<p>填入github生成的personal access token，并选择该仓库需要travis监控的分支。</p>
+<p><img src="/images/hexo-travis/set-travis.png" alt=""></p>
+<p>上面的github_token字段对应的value就是github网站上生成的personal access token。该字段的name可以随便起，但是必须与下面的travis配置文件中的对应。选择要编译的源码在blog-source分支。</p>
+<h3 id="配置-travis-yml"><a href="#配置-travis-yml" class="headerlink" title="配置.travis.yml"></a>配置.travis.yml</h3><p>travis会检测.travis.yml文件并根据其中的配置项进行博客部署。在博客根目录(/smduan.github.io/)下新建.travis.yml文件，并填入以下命令。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="variable">$vim</span> .travis.yml</span><br><span class="line"><span class="comment"># 指定构建环境是Node.js，当前版本是稳定版</span></span><br><span class="line">anguage: node_js</span><br><span class="line">node_js: stable</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置钩子只检测blog-source分支的push变动</span></span><br><span class="line">branches:</span><br><span class="line">  only:</span><br><span class="line">    - blog-source</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置缓存文件</span></span><br><span class="line">cache:</span><br><span class="line">  directories:</span><br><span class="line">    - node_modules</span><br><span class="line"></span><br><span class="line"><span class="comment">#在构建之前安装hexo环境和主题，这里的主题就是原来修改过的主题，我将其托管到另一个github仓库，直接clone就行，否则每次都是新的主题，要重新设置。</span></span><br><span class="line">before_install:</span><br><span class="line">  - npm install -g hexo-cli</span><br><span class="line">  - git <span class="built_in">clone</span> https://github.com/smduan/next.git themes/next</span><br><span class="line"></span><br><span class="line"><span class="comment">#安装git插件和搜索功能插件</span></span><br><span class="line">install:</span><br><span class="line">  - npm install</span><br><span class="line">  - npm install hexo-deployer-git --save</span><br><span class="line">  - npm install hexo-generator-searchdb --save</span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行清缓存，生成网页操作</span></span><br><span class="line">script:</span><br><span class="line">  - hexo clean</span><br><span class="line">  - hexo generate</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置git提交名，邮箱；替换真实token到_config.yml文件，最后depoy部署</span></span><br><span class="line">after_script:</span><br><span class="line">  - git config user.name <span class="string">"smduan"</span></span><br><span class="line">  - git config user.email <span class="string">"shaomingduan@gmail.com"</span></span><br><span class="line">  <span class="comment"># 替换同目录下的_config.yml文件中github_token字符串为travis后台刚才配置的变量，注&gt;意此处sed命令用了双引号。单引号无效！</span></span><br><span class="line">  - sed -i <span class="string">"s/github_token/<span class="variable">$&#123;github_token&#125;</span>/g"</span> ./_config.yml</span><br><span class="line">  - hexo deploy</span><br></pre></td></tr></table></figure>
+<p>保存文件，并将该文件push到blog-source分支。</p>
+<p>然后观察travis网页，可以发现正在编译，下图是编译成功的截图</p>
+<p><img src="/images/hexo-travis/run-travis.png" alt=""></p>
+<p>可以点击job log查看编译部署的日志。以后只要往blog-source分支push内容都会触发travis编译。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>此后可以在另一台没有hexo和node.js环境的机器上写博客并更行。步骤如下：</p>
+<p>1、将blog-source分支拉取到本地。</p>
+<p>2、书写博客，然后将博客文件拷贝到/source/_post/目录下</p>
+<p>3、将更新的博客push回github的blog-source分支。travis会检测到push变动，自动更新博客。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://juejin.im/post/5a1fa30c6fb9a045263b5d2a" target="_blank" rel="noopener">Hexo遇上Travis-CI：可能是最通俗易懂的自动发布博客图文教程</a></p>
+<p><a href="http://kchen.cc/2016/11/12/hexo-instructions/" target="_blank" rel="noopener">基于 Hexo 的全自动博客构建部署系统</a></p>
+<p><a href="https://troyyang.com/2017/06/24/Travis_Auto_Build_Deploy_Github_Projects/" target="_blank" rel="noopener">Travis-ci自动编译部署github上的项目</a></p>
+<p><a href="https://www.jianshu.com/p/e22c13d85659" target="_blank" rel="noopener">手把手教你使用Travis CI自动部署你的Hexo博客到Github上</a></p>
+]]></content>
+      <categories>
+        <category>hexo搭建个人博客</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>Travis CI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mac改写rm命令：移到废纸篓</title>
+    <url>/2018/08/05/mac-rewritting-rm/</url>
+    <content><![CDATA[<h2 id="Why"><a href="#Why" class="headerlink" title="Why"></a>Why</h2><p>作为一个mac用户，习惯了在终端操作，删除文件也习惯上使用rm -fr命令。使用这种方式删除的文件不会出现在废纸篓中，若是误删某个重要文件，想要找回会比较复杂。<br><a id="more"></a><br>针对这个问题，一种简单的方案是替换掉rm命令，写一个脚本，将要删除的文件移动到用户下的.Trash文件夹下，也就是废纸篓，但是有一个缺点就是，无法使用废纸篓的复原文件功能。</p>
+<p>理想的解决方案是：使用trash脚本替换rm命令，它的实质是调用finder的api进行删除操作，也就是移除到废纸篓，也就拥有了废纸篓的恢复源文件功能。</p>
+<h2 id="安装trash"><a href="#安装trash" class="headerlink" title="安装trash"></a>安装trash</h2><p><a href="http://hasseg.org/blog/post/406/trash-files-from-the-os-x-command-line/" target="_blank" rel="noopener">trash博客地址</a>和<a href="https://github.com/ali-rantakari/trash" target="_blank" rel="noopener">trash脚本github地址</a></p>
+<p>使用homebrew安装trash，若是没有安装homebrew且不清楚homebrew的，请参考<a href="https://www.jianshu.com/p/4e80b42823d5" target="_blank" rel="noopener">【工具】Homebrew的安装及使用</a>或者<a href="https://brew.sh/index_zh-cn.html" target="_blank" rel="noopener">官网</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ brew install trash</span><br></pre></td></tr></table></figure>
+<p>此时已经可以使用trash -fr filename，命令与rm一样。但是由于已经习惯性地使用rm命令，改成trash还是有时会习惯性地使用rm删除，因此将rm替换为trash</p>
+<h2 id="使用trash替换rm命令"><a href="#使用trash替换rm命令" class="headerlink" title="使用trash替换rm命令"></a>使用trash替换rm命令</h2><p>在~/.bash_profile文件中将rm指向trash，添加下列语句。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim ~/.bash_profile</span><br><span class="line"><span class="built_in">alias</span> rm=“trash”</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="variable">$source</span>  ~/.bash_profile    <span class="comment">#使添加的命令生效</span></span><br></pre></td></tr></table></figure>
+<p>此时使用rm命令删除文件后会发现文件在废纸篓里了，而且可以使用放回原处的功能。</p>
+]]></content>
+      <categories>
+        <category>mac小技巧</category>
+      </categories>
+      <tags>
+        <tag>mac</tag>
+        <tag>trash</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo+github搭建个人博客（二）：博客个性化设计</title>
+    <url>/2018/08/03/hexo-next/</url>
+    <content><![CDATA[<h2 id="主题选择"><a href="#主题选择" class="headerlink" title="主题选择"></a>主题选择</h2><p>hexo默认的主题是landscape，这个主题用一个字总结就是–丑。</p>
+<p>hexo官网提供很多简洁、精美的<a href="https://hexo.io/themes/" target="_blank" rel="noopener">主题</a>供选择，笔者选择<a href="https://github.com/iissnan/hexo-theme-next" target="_blank" rel="noopener">next主题</a>。这款主题制作精美而且用户较多，遇到问题基本上能够搜到解答。<br><a id="more"></a></p>
+<p>下面开始安装并做相应的个性化配置。</p>
+<h2 id="主题安装及常规设置"><a href="#主题安装及常规设置" class="headerlink" title="主题安装及常规设置"></a>主题安装及常规设置</h2><p>首先下载next主题</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/iissnan/hexo-theme-next themes/next</span><br></pre></td></tr></table></figure>
+<p>在博客根目录（/hexo/blog/）下修改博客配置，使用next主题:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim _config.yml</span><br><span class="line"> theme: next</span><br></pre></td></tr></table></figure>
+<p>将默认的landscape主题改成next</p>
+<p>修改主题配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> themes/next</span><br><span class="line">$ vim _config.yml</span><br><span class="line"><span class="comment">#将下面的注释去掉</span></span><br><span class="line">menu:</span><br><span class="line">  home: / || home</span><br><span class="line">  about: /about/ || user</span><br><span class="line">  tags: /tags/ || tags</span><br><span class="line">  categories: /categories/ || th</span><br><span class="line">  archives: /archives/ || archive</span><br><span class="line"></span><br><span class="line"><span class="comment">#设置自己的github链接和邮箱链接，有需要的自己设置，没有的不用管</span></span><br><span class="line">social:</span><br><span class="line">  GitHub: https://github.com/yourname || github</span><br><span class="line">  E-Mail: mailto:yourmail@gmail.com || envelope</span><br><span class="line"></span><br><span class="line"><span class="comment">#设置主题风格，笔者喜欢Gemini</span></span><br><span class="line">scheme: Gemini</span><br></pre></td></tr></table></figure>
+<p>回到博客根目录下，执行下列命令</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo new page &quot;about&quot;</span><br><span class="line">$ hexo new page &quot;tags&quot;</span><br><span class="line">$ hexo new page &quot;categories&quot;</span><br></pre></td></tr></table></figure>
+<p>上面三条命令创建关于页面、分类页面和标签页面，这三个页面默认是关闭的，根据自己的需要创建。</p>
+<p>将主题语言设置为中文，默认为英文<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ cd /hexo/blog/themes/next/language/</span><br><span class="line">$ cp zh-Hans.yml default.yml</span><br></pre></td></tr></table></figure></p>
+<p>重新部署博客，在浏览器中看到博客如下图所示。</p>
+<p><img src="/images/hexo-next/next-page-1.png" alt=""></p>
+<p>与前面的主题相比是不是发现b格提升了许多。上面安装的主题功能比脸都干净，许多功能需要自己配置。</p>
+<h2 id="添加统计访问量功能"><a href="#添加统计访问量功能" class="headerlink" title="添加统计访问量功能"></a>添加统计访问量功能</h2><p>为博客添加统计访问量的功能。这里使用的是不蒜子算法。</p>
+<p>在主题配置文件(themes/next/_config.yml)中修改如下信息：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="variable">$vim</span> _config.yml</span><br><span class="line">busuanzi_count:</span><br><span class="line">  <span class="comment"># count values only if the other configs are false</span></span><br><span class="line">  <span class="built_in">enable</span>: <span class="literal">true</span></span><br><span class="line">  <span class="comment"># custom uv span for the whole site</span></span><br><span class="line">  site_uv: <span class="literal">true</span></span><br><span class="line">  site_uv_header: &lt;i class=<span class="string">"fa fa-user"</span>&gt;&lt;/i&gt; 访问人数</span><br><span class="line">  site_uv_footer: 人</span><br><span class="line">  <span class="comment"># custom pv span for the whole site</span></span><br><span class="line">  site_pv: <span class="literal">true</span></span><br><span class="line">  site_pv_header: &lt;i class=<span class="string">"fa fa-eye"</span>&gt;&lt;/i&gt; 总访问量</span><br><span class="line">  site_pv_footer: 次</span><br><span class="line">  <span class="comment"># custom pv span for one page only</span></span><br><span class="line">  page_pv: <span class="literal">true</span></span><br><span class="line">  page_pv_header: &lt;i class=<span class="string">"fa fa-file-o"</span>&gt;&lt;/i&gt; 阅读数</span><br><span class="line">  page_pv_footer:</span><br></pre></td></tr></table></figure>
+<p>保存文件，重新部署博客，可以看到文章顶部显示阅读数</p>
+<p><img src="/images/hexo-next/count-top.png" alt=""></p>
+<p>网页底部显示访问人数和访问量</p>
+<p><img src="/images/hexo-next/count-bottom.png" alt=""></p>
+<h2 id="添加评论功能"><a href="#添加评论功能" class="headerlink" title="添加评论功能"></a>添加评论功能</h2><p>笔者使用韩国的来必力(livere)评论系统，因为其配置和使用相对简单。<a href="https://livere.com/" target="_blank" rel="noopener">官网地址</a>。首先根据其提示注册然后登录。</p>
+<p><img src="/images/hexo-next/livere-install.png" alt=""></p>
+<p>登录之后，点击安装—&gt;现在安装。根据提示填写信息之后生成id号。</p>
+<p><img src="/images/hexo-next/livere-id.png" alt=""></p>
+<p>复制上图中的data-uid</p>
+<p>修改主题的配置文件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim /hexo/blog/themes/next/_config.yml</span><br><span class="line">livere_uid: data-uid         <span class="comment">#data-uid就是上面生成的id号。</span></span><br></pre></td></tr></table></figure>
+<p>重新部署博客，可以看到评论框</p>
+<p><img src="/images/hexo-next/livere-talk.png" alt=""></p>
+<h2 id="添加搜索功能"><a href="#添加搜索功能" class="headerlink" title="添加搜索功能"></a>添加搜索功能</h2><p>当博客文章较多时，需要使用到搜索功能，搜索关键字找到目标文章。</p>
+<p>首先安装hexo搜索相关的插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ npm install hexo-generator-searchdb --save</span><br></pre></td></tr></table></figure>
+<p>启用搜索功能，在博客配置文件中加入下列配置内容</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim _config.yml</span><br><span class="line">search:   path: search.xml   field: post   format: html   <span class="built_in">limit</span>: 10000</span><br></pre></td></tr></table></figure>
+<p>在主题配置文件中修改</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim themes/next/_config.yml</span><br><span class="line">local_search:</span><br><span class="line">  <span class="built_in">enable</span>: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>重新部署博客，可以使用搜索功能</p>
+<p><img src="/images/hexo-next/search.png" alt=""></p>
+<p>至此一些常用的功能已经配置完成。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://www.jianshu.com/p/f6bf20c1e984" target="_blank" rel="noopener">Hexo搭建博客系列：（一）Hexo安装与添加NexT主题</a></p>
+<p><a href="http://hisen.me/20170407-Hexo%20next%E4%B8%BB%E9%A2%98%E6%B7%BB%E5%8A%A0%E6%9C%AC%E5%9C%B0%E6%90%9C%E7%B4%A2%20-%20%E4%B8%8D%E4%BD%BF%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E6%9C%8D%E5%8A%A1/" target="_blank" rel="noopener">Hexo next主题添加本地搜索 - 不使用第三方服务
+</a></p>
+<p><a href="https://github.com/iissnan/hexo-theme-next/wiki/%E5%88%9B%E5%BB%BA-%22%E5%85%B3%E4%BA%8E%E6%88%91%22-%E9%A1%B5%E9%9D%A2" target="_blank" rel="noopener">创建关于页面</a></p>
+<p><a href="https://blog.csdn.net/ganzhilin520/article/details/79048010" target="_blank" rel="noopener">hexo添加评论功能</a></p>
+<p><a href="https://blog.csdn.net/xr469786706/article/details/78166227" target="_blank" rel="noopener">Hexo+Next主题 文章添加阅读次数，访问量等</a></p>
+]]></content>
+      <categories>
+        <category>hexo搭建个人博客</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>next</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo+Github搭建个人博客（一）：博客部署</title>
+    <url>/2018/08/02/hexo-deploy/</url>
+    <content><![CDATA[<h2 id="框架选择"><a href="#框架选择" class="headerlink" title="框架选择"></a>框架选择</h2><p>目前较为流行的个人博客开源框架是hexo和wordpress：</p>
+<p>wordpress： PHP动态框架，需要一台服务器，完全傻瓜式操作，技术小白可以选用。缺点很明显，需要服务器（要钱），而且更换服务器的时候数据库迁移，很麻烦。<br><a id="more"></a><br>hexo： 一款基于Node.js的静态博客框架，hexo可以部署在自己的服务器上，同时还可以方便的生成静态网页托管在全球最大同性交友网站–github（相信这是很多人选择hexo的主要原因）。完全免费，需要一定技术基础，喜欢捯饬的人可以选用。</p>
+<p>笔者调研两款框架后直接选择hexo，不为什么。下面开始从零搭建网站。</p>
+<h2 id="本地部署hexo"><a href="#本地部署hexo" class="headerlink" title="本地部署hexo"></a>本地部署hexo</h2><p>hexo安装需要Node.js和git。在此仅提供Node.js的安装命令。</p>
+<p>安装Node.js和hexo</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="variable">$wget</span> -qO- https://raw.github.com/creationix/nvm/master/install.sh | sh</span><br><span class="line"><span class="variable">$nvm</span> nstall stable</span><br><span class="line"><span class="variable">$npm</span> install –g hexo-cli</span><br></pre></td></tr></table></figure>
+<p>安装完成之后新建一个存放博客源码的目录。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="variable">$mkdir</span> hexo</span><br><span class="line"><span class="variable">$cd</span> /hexo</span><br><span class="line"><span class="variable">$hexo</span> init blog       <span class="comment">#blog即为博客源码安装目录，名字随便起</span></span><br><span class="line"><span class="variable">$cd</span> blog</span><br><span class="line"><span class="variable">$hexo</span> server</span><br></pre></td></tr></table></figure>
+<p><img src="/images/hexo-deploy/hexo_server.png" alt=""></p>
+<p>出现如上内容，代表博客构建成功，在浏览器中输入地址:<a href="http://localhost:4000，就可以看到博客页面。" target="_blank" rel="noopener">http://localhost:4000，就可以看到博客页面。</a></p>
+<p><img src="/images/hexo-deploy/hexo_index.png" alt=""></p>
+<p>每次写完博客文章之后将其放到/hexo/blog/source/_posts/目录下，hexo会自动检测到该文章，无需重启服务。</p>
+<h2 id="github部署"><a href="#github部署" class="headerlink" title="github部署"></a>github部署</h2><p>上面的内容是将静态页面部署到本地服务器。但是我不想花钱买服务器。然而放在自己电脑上又不方便。不用担心，hexo支持将静态网页部署到github上。</p>
+<p>首先在github上新建一个空的仓库，命名为:yourname.github.io。因为github提供一个二级域名，也就是上面这个域名供你访问。</p>
+<p>可以设置<a href="https://www.jianshu.com/p/b5ec092fc1d1" target="_blank" rel="noopener">git免密认证</a></p>
+<p>在本地为hexo安装git插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ npm install hexo-deployer-git  --save</span><br></pre></td></tr></table></figure>
+<p>修改配置文件，打开文件/hexo/blog/_config.yaml，在最后面添加如下内容：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vim _config.yml</span><br><span class="line">deploy:</span><br><span class="line">  		<span class="built_in">type</span>: git</span><br><span class="line">  		repo: https://github.com/yourname/yourname.github.io.git</span><br><span class="line">  		branch: master</span><br><span class="line">  		message:</span><br></pre></td></tr></table></figure>
+<p>其中type为git，repo即为上面创建的github仓库地址，branch默认为master分支。</p>
+<p>保存配置，在根目录(/hexo/blog/)下键入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /hexo/blog</span><br><span class="line"><span class="variable">$hexo</span> generate    <span class="comment">#hexo g</span></span><br><span class="line"><span class="variable">$hexo</span> deploy      <span class="comment">#hexo d</span></span><br></pre></td></tr></table></figure>
+<p>至此，已经将博客部署到github上，在浏览器输入:<a href="https://yourname.github.io，即可看到博客。" target="_blank" rel="noopener">https://yourname.github.io，即可看到博客。</a></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，每次写完博客，将其复制到/hexo/blog/source/_posts/目录下，然后执行下列命令部署到github上：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /hexo/blog</span><br><span class="line"><span class="variable">$hexo</span> clean</span><br><span class="line"><span class="variable">$hexo</span> g</span><br><span class="line"><span class="variable">$hexo</span> d</span><br></pre></td></tr></table></figure>
+<p>然后登录<a href="https://yourname.github.io进行查看自己的新博客。" target="_blank" rel="noopener">https://yourname.github.io进行查看自己的新博客。</a></p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="http://kchen.cc/2016/11/12/hexo-instructions/" target="_blank" rel="noopener">基于 Hexo 的全自动博客构建部署系统</a></p>
+]]></content>
+      <categories>
+        <category>hexo搭建个人博客</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>github</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/08/01/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<a id="more"></a>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a><br><!-- more --></p>
+]]></content>
+      <categories>
+        <category>测试页面</category>
+      </categories>
+      <tags>
+        <tag>hello world</tag>
+      </tags>
+  </entry>
+</search>
